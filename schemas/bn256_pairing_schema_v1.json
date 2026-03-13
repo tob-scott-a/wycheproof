@@ -1,0 +1,98 @@
+{
+  "type": "object",
+  "definitions": {
+    "Bn256PairingTestGroup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "Bn256Pairing"
+          ]
+        },
+        "source": {
+          "$ref": "common.json#/definitions/Source"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Bn256PairingTestVector"
+          }
+        }
+      },
+      "required": ["type", "source", "tests"],
+      "additionalProperties": false
+    },
+    "Bn256PairingTestVector": {
+      "type": "object",
+      "properties": {
+        "tcId": {
+          "type": "integer",
+          "description": "Identifier of the test case"
+        },
+        "comment": {
+          "type": "string",
+          "description": "A brief description of the test case"
+        },
+        "nPairs": {
+          "type": "integer",
+          "description": "The number of (G1, G2) point pairs in the input"
+        },
+        "input": {
+          "type": "string",
+          "format": "HexBytes",
+          "description": "The ABI-encoded input for the ecPairing precompile: repeated (G1x || G1y || G2x_im || G2x_re || G2y_im || G2y_re) as 32-byte big-endian uint256 values, 192 bytes per pair"
+        },
+        "expected": {
+          "type": "string",
+          "format": "HexBytes",
+          "description": "The 32-byte output: 0x01 (padded to 32 bytes) if pairing check succeeds, empty if the call reverts"
+        },
+        "result": {
+          "$ref": "common.json#/definitions/Result"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of flags"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["tcId", "comment", "nPairs", "input", "expected", "result", "flags"]
+    }
+  },
+  "properties": {
+    "algorithm": {
+      "type": "string",
+      "description": "The primitive tested in the test file"
+    },
+    "header": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional documentation"
+    },
+    "notes": {
+      "$ref": "common.json#/definitions/Notes"
+    },
+    "numberOfTests": {
+      "type": "integer",
+      "description": "The number of test vectors in this test"
+    },
+    "schema": {
+      "enum": [
+        "bn256_pairing_schema_v1.json"
+      ]
+    },
+    "testGroups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Bn256PairingTestGroup"
+      }
+    }
+  },
+  "required": ["algorithm", "header", "notes", "numberOfTests", "schema", "testGroups"],
+  "additionalProperties": false
+}

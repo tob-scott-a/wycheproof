@@ -1,0 +1,261 @@
+{
+  "algorithm": "BN256ADD",
+  "header": [
+    "Test vectors for the BN-254 (alt_bn128) ecAdd",
+    "precompile at address 0x06 (EIP-196).",
+    "Input is ABI-encoded as x1||y1||x2||y2,",
+    "each coordinate a 32-byte big-endian uint256."
+  ],
+  "notes": {
+    "Doubling": {
+      "bugType": "EDGE_CASE",
+      "description": "Both input points are identical, triggering the point doubling path.",
+      "effect": "Some implementations use separate add and double formulas; this tests the doubling path."
+    },
+    "EmptyInput": {
+      "bugType": "EDGE_CASE",
+      "description": "The input is empty. The EVM ecAdd precompile returns (0,0) for empty input."
+    },
+    "FieldBoundary": {
+      "bugType": "EDGE_CASE",
+      "description": "Coordinates are near the field modulus, exercising carry propagation.",
+      "effect": "Implementations with carry bugs may produce incorrect results for boundary values."
+    },
+    "GroupOrder": {
+      "bugType": "EDGE_CASE",
+      "description": "The computation involves the group order, testing modular arithmetic boundaries."
+    },
+    "InvalidEncoding": {
+      "bugType": "AUTH_BYPASS",
+      "description": "A coordinate value is >= the field modulus p.",
+      "effect": "Accepting out-of-range field elements may enable forgery or consensus divergence."
+    },
+    "InvalidInputLength": {
+      "bugType": "AUTH_BYPASS",
+      "description": "The input length is not a valid multiple of the expected size.",
+      "effect": "Accepting malformed input can lead to parsing errors or undefined behavior."
+    },
+    "InverseAddition": {
+      "bugType": "EDGE_CASE",
+      "description": "The two points are additive inverses (P + (-P) = O).",
+      "effect": "Failure to handle inverse addition correctly can produce incorrect results or panics."
+    },
+    "NotOnCurve": {
+      "bugType": "AUTH_BYPASS",
+      "description": "A point is not on the BN-254 curve y^2 = x^3 + 3.",
+      "effect": "Accepting off-curve points enables various cryptographic attacks.",
+      "cves": [
+        "CVE-2025-30147"
+      ]
+    },
+    "PointAtInfinity": {
+      "bugType": "EDGE_CASE",
+      "description": "One or both input points are the point at infinity (0,0).",
+      "effect": "Incorrect handling of the identity element breaks group arithmetic."
+    },
+    "TruncatedInput": {
+      "bugType": "AUTH_BYPASS",
+      "description": "The input is shorter than expected.",
+      "effect": "Accepting truncated input can lead to undefined behavior."
+    },
+    "Valid": {
+      "bugType": "BASIC",
+      "description": "The test vector contains a valid ecAdd computation."
+    }
+  },
+  "numberOfTests": 18,
+  "schema": "bn256_add_schema_v1.json",
+  "testGroups": [
+    {
+      "type": "Bn256Add",
+      "source": {
+        "name": "c2sp/wycheproof/bn256vecgen",
+        "version": "0.1"
+      },
+      "tests": [
+        {
+          "tcId": 1,
+          "comment": "generator plus infinity",
+          "input": "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "result": "valid",
+          "flags": [
+            "PointAtInfinity"
+          ]
+        },
+        {
+          "tcId": 2,
+          "comment": "infinity plus generator",
+          "input": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "result": "valid",
+          "flags": [
+            "PointAtInfinity"
+          ]
+        },
+        {
+          "tcId": 3,
+          "comment": "infinity plus infinity",
+          "input": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "result": "valid",
+          "flags": [
+            "PointAtInfinity"
+          ]
+        },
+        {
+          "tcId": 4,
+          "comment": "generator doubling (P + P)",
+          "input": "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "expected": "030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd315ed738c0e0a7c92e7845f96b2ae9c0a68a6a449e3538fc7ff3ebf7a5a18a2c4",
+          "result": "valid",
+          "flags": [
+            "Doubling"
+          ]
+        },
+        {
+          "tcId": 5,
+          "comment": "generator plus negation (P + (-P) = O)",
+          "input": "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000130644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "result": "valid",
+          "flags": [
+            "InverseAddition"
+          ]
+        },
+        {
+          "tcId": 6,
+          "comment": "2G + G = 3G",
+          "input": "030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd315ed738c0e0a7c92e7845f96b2ae9c0a68a6a449e3538fc7ff3ebf7a5a18a2c400000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "expected": "0769bf9ac56bea3ff40232bcb1b6bd159315d84715b8e679f2d355961915abf02ab799bee0489429554fdb7c8d086475319e63b40b9c5b57cdf1ff3dd9fe2261",
+          "result": "valid",
+          "flags": [
+            "Valid"
+          ]
+        },
+        {
+          "tcId": 7,
+          "comment": "(n-1)*G + G = infinity",
+          "input": "000000000000000000000000000000000000000000000000000000000000000130644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd4500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "result": "valid",
+          "flags": [
+            "GroupOrder"
+          ]
+        },
+        {
+          "tcId": 8,
+          "comment": "point with x near field modulus, doubling",
+          "input": "062cd463a2f89d57f424707e398a6e43e45e5541963e15b190fe2b1df0ae56bc1d73524818064e5801469908e4aef1540e3c68882f40560b9497192e437444a2062cd463a2f89d57f424707e398a6e43e45e5541963e15b190fe2b1df0ae56bc1d73524818064e5801469908e4aef1540e3c68882f40560b9497192e437444a2",
+          "expected": "239633a51a2c5f21b4d79b29cc66fc91efd573af5cedc0b74392d9bc15bf6b4b1c133ab53221d67572ce0c4f7db8ff99e9a14d5161b3e66a9a5031c84c0712b5",
+          "result": "valid",
+          "flags": [
+            "FieldBoundary"
+          ]
+        },
+        {
+          "tcId": 9,
+          "comment": "point not on curve (x=1, y=1)",
+          "input": "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "NotOnCurve"
+          ]
+        },
+        {
+          "tcId": 10,
+          "comment": "x coordinate >= field modulus",
+          "input": "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "InvalidEncoding"
+          ]
+        },
+        {
+          "tcId": 11,
+          "comment": "y coordinate >= field modulus",
+          "input": "000000000000000000000000000000000000000000000000000000000000000130644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd4700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "InvalidEncoding"
+          ]
+        },
+        {
+          "tcId": 12,
+          "comment": "x = p-1, y = 0, not on curve",
+          "input": "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "NotOnCurve",
+            "FieldBoundary"
+          ]
+        },
+        {
+          "tcId": 13,
+          "comment": "x = p+1 (field overflow, would reduce to 1)",
+          "input": "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd48000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "InvalidEncoding",
+            "FieldBoundary"
+          ]
+        },
+        {
+          "tcId": 14,
+          "comment": "truncated input (only one point)",
+          "input": "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "TruncatedInput"
+          ]
+        },
+        {
+          "tcId": 15,
+          "comment": "empty input",
+          "input": "",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "result": "valid",
+          "flags": [
+            "EmptyInput"
+          ]
+        },
+        {
+          "tcId": 16,
+          "comment": "point on wrong curve (twist point encoded as G1)",
+          "input": "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "NotOnCurve"
+          ]
+        },
+        {
+          "tcId": 17,
+          "comment": "generator plus zero-encoded infinity",
+          "input": "0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+          "result": "valid",
+          "flags": [
+            "PointAtInfinity"
+          ]
+        },
+        {
+          "tcId": 18,
+          "comment": "input length 129 (not multiple of 128)",
+          "input": "000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "expected": "",
+          "result": "invalid",
+          "flags": [
+            "InvalidInputLength"
+          ]
+        }
+      ]
+    }
+  ]
+}

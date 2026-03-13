@@ -1,0 +1,94 @@
+{
+  "type": "object",
+  "definitions": {
+    "Bn256MulTestGroup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "Bn256Mul"
+          ]
+        },
+        "source": {
+          "$ref": "common.json#/definitions/Source"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Bn256MulTestVector"
+          }
+        }
+      },
+      "required": ["type", "source", "tests"],
+      "additionalProperties": false
+    },
+    "Bn256MulTestVector": {
+      "type": "object",
+      "properties": {
+        "tcId": {
+          "type": "integer",
+          "description": "Identifier of the test case"
+        },
+        "comment": {
+          "type": "string",
+          "description": "A brief description of the test case"
+        },
+        "input": {
+          "type": "string",
+          "format": "HexBytes",
+          "description": "The 96-byte ABI-encoded input for the ecMul precompile: x || y || s as 32-byte big-endian uint256 values"
+        },
+        "expected": {
+          "type": "string",
+          "format": "HexBytes",
+          "description": "The 64-byte ABI-encoded output: x || y as 32-byte big-endian uint256 values, empty if result is invalid"
+        },
+        "result": {
+          "$ref": "common.json#/definitions/Result"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of flags"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["tcId", "comment", "input", "expected", "result", "flags"]
+    }
+  },
+  "properties": {
+    "algorithm": {
+      "type": "string",
+      "description": "The primitive tested in the test file"
+    },
+    "header": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional documentation"
+    },
+    "notes": {
+      "$ref": "common.json#/definitions/Notes"
+    },
+    "numberOfTests": {
+      "type": "integer",
+      "description": "The number of test vectors in this test"
+    },
+    "schema": {
+      "enum": [
+        "bn256_mul_schema_v1.json"
+      ]
+    },
+    "testGroups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Bn256MulTestGroup"
+      }
+    }
+  },
+  "required": ["algorithm", "header", "notes", "numberOfTests", "schema", "testGroups"],
+  "additionalProperties": false
+}
